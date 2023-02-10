@@ -53,6 +53,8 @@ else
 	yum install wireguard-dkms wireguard-tools -y
 fi
 
+sleep 5
+
 # Verify if the installation is successful
 find / -iname "wireguard.ko" 2>/dev/null
 if [ $? -ne 0 ]; then
