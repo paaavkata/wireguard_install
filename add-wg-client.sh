@@ -18,11 +18,13 @@ if [ $user != "root" ]; then
 fi
 
 wireguard_dir="/etc/wireguard/"
+wireguard_dir='/home/pavel/WorkspaceFileConvert/packer_images/AWS/jumpbox/cm/ansible/files/wg_config_files'
 wireguard_interface_name="wg0"
 wireguard_config_file="${wireguard_dir}/${wireguard_interface_name}.conf" # WG server config file
-wireguard_public_key="${wireguard_dir}/${HOSTNAME}.${wireguard_interface_name}.publickey" # WG server pub key
-wireguard_private_key="${wireguard_dir}/${HOSTNAME}.${wireguard_interface_name}.privatekey" # WG server private key
-wireguard_preshared_key="${wireguard_dir}/${HOSTNAME}.${wireguard_interface_name}.presharedkey" # WG server shared key
+wireguard_public_key="${wireguard_dir}/${wireguard_interface_name}.publickey" # WG server pub key
+wireguard_private_key="${wireguard_dir}/${wireguard_interface_name}.privatekey" # WG server private key
+wireguard_preshared_key="${wireguard_dir}/${wireguard_interface_name}.presharedkey" # WG server shared key
+wg_vpn_endpoint='wg.cloudfusion.tech'
 
 echo "Check if Wireguard is installed and configured"
 if yum list installed wireguard-dkms; then
@@ -52,7 +54,7 @@ else
     echo "Wireguard not installed. Run the install-wireguard.sh script first"
 fi
 
-client_config_dir="/etc/wireguard/client-config"
+client_config_dir="${wireguard_dir}/client-config"
 
 if [ -f "${client_config_dir}/next-ip" ]; then
     client_private_ip=$(cat "${client_config_dir}/next-ip")
@@ -90,7 +92,6 @@ umask 077; wg genkey | tee "$client_private_key" | wg pubkey > "$client_public_k
 umask 077; wg genpsk > "$client_preshared_key"
 
 # Pull needed data
-public_ip=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
 wg_udp_port=$(cat $wireguard_config_file | grep "ListenPort" | cut -d " " -f3)
 
 # Create client's config file
@@ -105,7 +106,7 @@ DNS = ${client_dns_ip}
 PublicKey = $(cat ${wireguard_public_key}) 
 AllowedIPs = 0.0.0.0/0
 # EC2 public IP4 and port 
-Endpoint = ${public_ip}:${wg_udp_port}
+Endpoint = ${wg_vpn_endpoint}:${wg_udp_port}
 PersistentKeepalive = 15
 PresharedKey = $(cat ${client_preshared_key})" > $client_config_file
 
